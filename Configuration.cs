@@ -6,8 +6,10 @@ namespace DieMob;
 internal class Configuration
 {
     #region 配置项成员
-    [JsonProperty("插件开关", Order = 0)]
+    [JsonProperty("插件开关", Order = -1)]
     public bool Enabled { get; set; } = true;
+    [JsonProperty("进出消息", Order = 0)]
+    public bool Mess { get; set; } = true;
     [JsonProperty("更新间隔", Order = 1)]
     public int UpdateInterval { get; set; } = 1000;
     [JsonProperty("排斥力修正系数", Order = 2)]

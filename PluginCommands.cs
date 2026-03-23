@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Terraria;
 using TShockAPI;
 using TShockAPI.DB;
+using static DieMob.Plugin;
 using static DieMob.Utils;
 
 namespace DieMob;
@@ -22,6 +23,11 @@ internal static class PluginCommands
 
         switch (subCmd)
         {
+            case "ms":
+            case "mess":
+                SetBool("进出消息开关", args.Player, () => Config.Mess, (val) => Config.Mess = val);
+                break;
+
             case "ls":
             case "list":
                 HandleList(args);
@@ -96,6 +102,18 @@ internal static class PluginCommands
     }
     #endregion
 
+    #region 统一布尔配置项切换方法
+    public static void SetBool(string desc, TSPlayer plr, Func<bool> getVal, Action<bool> setVal)
+    {
+        bool cur = getVal();
+        bool newVal = !cur;
+        setVal(newVal);
+        Config.Write();
+        var state = newVal ? "开启" : "关闭";
+        plr.SendMessage($"{desc}已切换为 {state}", color);
+    }
+    #endregion
+
     #region 列出保护区域方法
     private static void HandleList(CommandArgs args)
     {
@@ -152,12 +170,12 @@ internal static class PluginCommands
         }
 
         plr.SendMessage($"\n保护区: {data.RegionName}", color);
-        plr.SendMessage($"类型: {data.Type}", color);
+        plr.SendMessage($"保护类型: {data.Type}", color);
         plr.SendMessage($"影响友好NPC: {(data.AffectFriendlyNPCs ? "是" : "否")}", color);
         plr.SendMessage($"影响雕像刷怪: {(data.AffectStatueSpawns ? "是" : "否")}", color);
         plr.SendMessage($"替换怪物数: {data.ReplaceMobs.Count} 个。使用 '/dmb rp {data.RegionName} [页]' 查看列表", color);
-        if (!string.IsNullOrEmpty(data.text))
-            plr.SendMessage($"{data.text}", color);
+        if (!string.IsNullOrEmpty(data.desc))
+            plr.SendMessage($"{data.desc}", color);
     }
     #endregion
 
@@ -219,7 +237,7 @@ internal static class PluginCommands
         if (!int.TryParse(args.Parameters.ElementAtOrDefault(2), out int page) || page < 1)
             page = 1;
 
-        var lines = region.ReplaceMobs.Select(kvp => 
+        var lines = region.ReplaceMobs.Select(kvp =>
         $"\n从 {Lang.GetNPCNameValue(kvp.Key)}({kvp.Key}) 替换为" +
         $" {Lang.GetNPCNameValue(kvp.Value)}({kvp.Value})").ToList();
 
@@ -255,7 +273,9 @@ internal static class PluginCommands
             plr.SendMessage("3.雕像(s)", color);
             plr.SendMessage("4.替换(r) 原ID [新ID] ——有2个ID则添加/更新，只有1个则删除", color);
             plr.SendMessage("5.描述(d) 文字", color);
-            plr.SendMessage("6.显示描述占位符(zwf)", color);
+            plr.SendMessage("6.进入消息(j) 文字", color);
+            plr.SendMessage("7.离开消息(l) 文字", color);
+            plr.SendMessage("8.显示描述占位符(zwf)", color);
             return;
         }
 
@@ -374,28 +394,67 @@ internal static class PluginCommands
                 if (args.Parameters.Count > 3)
                 {
                     string desc = string.Join(" ", args.Parameters.Skip(3));
-                    region.text = desc;
+                    region.desc = desc;
                     plr.SendMessage($"\n保护区描述已设置为: {desc}", color);
                     changed = true;
                 }
                 else
                 {
-                    region.text = string.Empty;
+                    region.desc = string.Empty;
                     plr.SendMessage("保护区描述已清空", color);
                     changed = true;
                 }
                 break;
 
             case "6":
+            case "j":
+            case "join":
+            case "进入消息":
+                if (args.Parameters.Count > 3)
+                {
+                    string desc = string.Join(" ", args.Parameters.Skip(3));
+                    region.Join = desc;
+                    plr.SendMessage($"\n保护区进入消息已设置为: {desc}", color);
+                    changed = true;
+                }
+                else
+                {
+                    region.Join = string.Empty;
+                    plr.SendMessage("保护区进入消息已清空", color);
+                    changed = true;
+                }
+                break;
+
+            case "7":
+            case "l":
+            case "left":
+            case "离开消息":
+                if (args.Parameters.Count > 3)
+                {
+                    string desc = string.Join(" ", args.Parameters.Skip(3));
+                    region.Left = desc;
+                    plr.SendMessage($"\n保护区离开消息已设置为: {desc}", color);
+                    changed = true;
+                }
+                else
+                {
+                    region.Left = string.Empty;
+                    plr.SendMessage("保护区离开消息已清空", color);
+                    changed = true;
+                }
+                break;
+
+            case "8":
             case "zwf":
             case "占位符":
             case "显示描述占位符":
-                plr.SendMessage("\n示例:/dmb up 区域名 5 欢迎拿着{物品名}的{玩家名}进入本区域 ", color);
+                plr.SendMessage("\n示例:/dmb up 区域名 5 欢迎拿着{物品名}的{玩家名}进入{区域名} ", color);
                 plr.SendMessage("插件名、玩家名、ip、uuid、组名\n" +
                                 "账号、武器类型、物品图标、物品名、当前入侵\n" +
                                 "进度、生命、生命上限、魔力、魔力上限\n" +
                                 "队伍、同队人数、同队玩家、别队人数、队伍统计\n" +
-                                "服务器名、在线人数、在线玩家、服务器上限", color);
+                                "服务器名、在线人数、在线玩家、服务器上限\n" +
+                                "区域名、保护、友好、雕像、替换", color);
                 break;
 
             default:
@@ -405,7 +464,9 @@ internal static class PluginCommands
                 plr.SendMessage("3.雕像(s)", color);
                 plr.SendMessage("4.替换(r) 原ID [新ID] ——有2个ID则添加/更新，只有1个则删除", color);
                 plr.SendMessage("5.描述(d) 文字", color);
-                plr.SendMessage("6.显示描述占位符(zwf)", color);
+                plr.SendMessage("6.进入消息(j) 文字", color);
+                plr.SendMessage("7.离开消息(l) 文字", color);
+                plr.SendMessage("8.显示描述占位符(zwf)", color);
                 return;
         }
 

@@ -64,12 +64,12 @@ internal class Utils
     #endregion
 
     #region 渐变色方法
-    public static string TextGradient(string text, TSPlayer? plr = null)
+    public static string TextGradient(string text, TSPlayer? plr = null, DieMobRegion? data = null, string? regionName = null)
     {
         if (string.IsNullOrEmpty(text))
             return text;
 
-        text = placeholder(text, plr);
+        text = placeholder(text, plr, data, regionName);
 
         // 检查是否已包含颜色标签
         if (text.Contains("[c/"))
@@ -86,8 +86,19 @@ internal class Utils
     #endregion
 
     #region 占位符替换方法(忽略大小写)
-    private static string placeholder(string text, TSPlayer? plr)
+    private static string placeholder(string text, TSPlayer? plr, DieMobRegion? data, string? regionName)
     {
+        if (!string.IsNullOrEmpty(regionName))
+            text = Regex.Replace(text, @"\{区域名\}", regionName, RegexOptions.IgnoreCase);
+
+        if (data != null)
+        {
+            text = Regex.Replace(text, @"\{保护\}", data.Type == 0 ? "杀死" : "击退", RegexOptions.IgnoreCase);
+            text = Regex.Replace(text, @"\{友好\}", data.AffectFriendlyNPCs ? "是" : "否", RegexOptions.IgnoreCase);
+            text = Regex.Replace(text, @"\{雕像\}", data.AffectStatueSpawns ? "是" : "否", RegexOptions.IgnoreCase);
+            text = Regex.Replace(text, @"\{替换\}", data.ReplaceMobs.Count.ToString(), RegexOptions.IgnoreCase);
+        }
+
         if (plr != null)
         {
             text = Regex.Replace(text, @"\{玩家名\}", plr.Name, RegexOptions.IgnoreCase);
@@ -180,7 +191,7 @@ internal class Utils
             text = Regex.Replace(text, @"\{进度\}", "无", RegexOptions.IgnoreCase);
 
         // 入侵事件
-        if(Main.invasionType > 0)
+        if (Main.invasionType > 0)
             text = Regex.Replace(text, @"\{入侵\}", GetInvasionName(Main.invasionType), RegexOptions.IgnoreCase);
         else
             text = Regex.Replace(text, @"\{入侵\}", "无", RegexOptions.IgnoreCase);

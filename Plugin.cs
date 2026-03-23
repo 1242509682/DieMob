@@ -15,7 +15,7 @@ public class Plugin : TerrariaPlugin
     public static string PluginName => "怪物保护区"; // 插件名称
     public override string Name => PluginName;
     public override string Author => "Zaicon、羽学";
-    public override Version Version => new(1, 0, 4);
+    public override Version Version => new(1, 0, 5);
     public override string Description => "为区域添加怪物保护选项";
     #endregion
 
@@ -181,17 +181,17 @@ public class Plugin : TerrariaPlugin
         var regionName = args.Region.Name;
         if (RegionStorage.Regions.Any(r => r.RegionName == regionName))
         {
-            var data = RegionStorage.Regions.FirstOrDefault(r => r.RegionName == regionName);
+            DieMobRegion? data = RegionStorage.Regions.FirstOrDefault(r => r.RegionName == regionName);
             if (data != null)
             {
-                plr.SendMessage(TextGradient($"\n保护类型: {data.Type}"), color);
-                plr.SendMessage(TextGradient($"影响友好NPC: {(data.AffectFriendlyNPCs ? "是" : "否")}"), color);
-                plr.SendMessage(TextGradient($"影响雕像刷怪: {(data.AffectStatueSpawns ? "是" : "否")}"), color);
-                plr.SendMessage(TextGradient($"替换怪物数: {data.ReplaceMobs.Count} 个。\n查看列表: /dmb rp {regionName}"), color);
+                if (Config.Mess)
+                {
+                    if (!string.IsNullOrEmpty(data.Join))
+                        plr.SendMessage(TextGradient($"\n{data.Join}", plr, data, regionName), color);
 
-                plr.SendMessage(TextGradient($"\n欢迎进入区域 [c/FFD700:{regionName}]"), color);
-                if (!string.IsNullOrEmpty(data.text))
-                    plr.SendMessage(TextGradient($"{data.text}", plr), color);
+                    if (!string.IsNullOrEmpty(data.desc))
+                        plr.SendMessage(TextGradient($"{data.desc}", plr, data, regionName), color);
+                }
             }
         }
     }
@@ -199,12 +199,12 @@ public class Plugin : TerrariaPlugin
     private void OnRegionLeft(RegionHooks.RegionLeftEventArgs args)
     {
         var plr = args.Player;
-        if (plr is null || !plr.IsLoggedIn || !Config.Enabled) return;
-        var regionName = args.Region.Name;
-        if (RegionStorage.Regions.Any(r => r.RegionName == regionName))
-        {
-            plr.SendMessage(TextGradient($"\n你已离开区域 [c/FFD700:{regionName}]"), color);
-        }
+        if (plr is null || !plr.IsLoggedIn || !Config.Enabled || !Config.Mess) return;
+
+        DieMobRegion? data = RegionStorage.Regions.FirstOrDefault(r => r.RegionName == args.Region.Name);
+        if (data != null)
+            if (!string.IsNullOrEmpty(data.Left))
+                plr.SendMessage(TextGradient($"\n{data.Left}", plr, data, args.Region.Name), color);
     }
 
     private void OnRegionDelete(RegionHooks.RegionDeletedEventArgs args)
