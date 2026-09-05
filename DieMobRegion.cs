@@ -20,8 +20,12 @@ public class DieMobRegion
     public bool AffectFriendlyNPCs { get; set; } = false;
     [JsonProperty("影响雕像生成")]
     public bool AffectStatueSpawns { get; set; } = false;
-    [JsonProperty("保护区描述")]
-    public string text { get; set; } = string.Empty;
+    [JsonProperty("进入消息")]
+    public string Join { get; set; } = "保护类型:{保护}\n影响友好NPC:{友好}\n影响雕像刷怪:{雕像}\n替换怪物数:{替换}个\n查看列表: /dmb rp {区域名}\n欢迎进入区域 [c/FFD700:{区域名}]";
+    [JsonProperty("离开消息")]
+    public string Left { get; set; } = "你已离开区域 [c/FFD700:{区域名}]";
+    [JsonProperty("区域描述")]
+    public string desc { get; set; } = string.Empty;
 
     public DieMobRegion() { }
 

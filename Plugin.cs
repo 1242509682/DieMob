@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Terraria;
+using Terraria.ID;
 using TerrariaApi.Server;
 using TShockAPI;
 using TShockAPI.DB;
@@ -15,7 +16,7 @@ public class Plugin : TerrariaPlugin
     public static string PluginName => "怪物保护区"; // 插件名称
     public override string Name => PluginName;
     public override string Author => "Zaicon、羽学";
-    public override Version Version => new(1, 0, 5);
+    public override Version Version => new(1, 0, 6);
     public override string Description => "为区域添加怪物保护选项";
     #endregion
 
@@ -111,9 +112,9 @@ public class Plugin : TerrariaPlugin
                 continue;
             }
 
-            bool isFriendly = npc.friendly && data.AffectFriendlyNPCs && npc.type != 488;
-            bool isStatue = npc.SpawnedFromStatue && data.AffectStatueSpawns && npc.netID != 488 && npc.catchItem == 0;
-            bool isNormal = !npc.friendly && !npc.SpawnedFromStatue && npc.type != 488 && npc.catchItem == 0;
+            bool isFriendly = npc.friendly && data.AffectFriendlyNPCs && npc.type != NPCID.TargetDummy;
+            bool isStatue = npc.SpawnedFromStatue && data.AffectStatueSpawns && npc.netID != NPCID.TargetDummy && npc.catchItem == 0;
+            bool isNormal = !npc.friendly && !npc.SpawnedFromStatue && npc.type != NPCID.TargetDummy && npc.catchItem == 0;
 
             if (!(isFriendly || isStatue || isNormal)) continue;
 
@@ -150,12 +151,8 @@ public class Plugin : TerrariaPlugin
             }
         }
 
-        if (needSend)
-        {
-            npc.netUpdate = true;
-            args.Handled = true;
-            TSPlayer.All.SendData(PacketTypes.NpcUpdate, "", npc.whoAmI);
-        }
+        npc.netUpdate = needSend;
+        args.Handled = needSend;
     }
 
     public static bool InArea(Region region, int x, int y)

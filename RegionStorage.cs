@@ -95,6 +95,6 @@ internal static class RegionStorage
             Regions.RemoveAll(r => r.RegionName == regionName);
             Save(worldId);
         }
-    } 
+    }
     #endregion
 }
